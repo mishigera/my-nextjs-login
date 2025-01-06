@@ -24,11 +24,7 @@ export default function Dashboard() {
         }));
         setPhotos(uploadedImages);
       } catch (error:any) {
-        const response = await axios.get('http://localhost:5001/api/images/images', {
-          headers: {
-            'Authorization': `${localStorage.getItem('token')}`,
-          }
-        });
+      
       if(error.response && error.response.status === 401){
             Swal.fire({
             icon: 'warning',
@@ -41,6 +37,12 @@ export default function Dashboard() {
           
             // Redirigir después de que el Swal se cierre
             window.location.href = '/';
+          });
+        }else if(error.response.data.message){
+          Swal.fire({
+            icon: 'warning',
+            title: 'Error',
+            text: error.response.data.message,
           });
         }
         console.error('Error fetching images:', error);
@@ -59,7 +61,7 @@ export default function Dashboard() {
       resizedFiles.forEach((file) => {
         formData.append('image', file);
       });
-      formData.append('user_id', localStorage.getItem('user_id') || '');
+
 
       try {
         const response = await axios.post('http://localhost:5001/api/images/upload', formData, {
@@ -95,6 +97,12 @@ export default function Dashboard() {
           
             // Redirigir después de que el Swal se cierre
             window.location.href = '/';
+          });
+        }else if(error.response.data.message){
+          Swal.fire({
+            icon: 'warning',
+            title: 'Error',
+            text: error.response.data.message,
           });
         }
       }
