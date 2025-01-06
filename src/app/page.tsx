@@ -16,7 +16,7 @@ export default function Auth() {
 
     try {
       const response = await axios.post('http://localhost:5001/api/auth/login', { username:email, password:password });
-      const { token } = response.data;
+      const { token, user_id } = response.data;
 
       localStorage.setItem('token', token);
       router.push('/dashboard');

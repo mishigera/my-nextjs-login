@@ -33,6 +33,7 @@ export default function Dashboard() {
       Array.from(files).forEach((file) => {
         formData.append('image', file);
       });
+      formData.append('user_id', localStorage.getItem('user_id') || '');
 
       try {
         const response = await axios.post('http://localhost:5001/api/images/upload', formData, {
