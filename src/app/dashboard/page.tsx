@@ -60,8 +60,10 @@ export default function Dashboard() {
       const formData = new FormData();
       resizedFiles.forEach((file) => {
         formData.append('image', file);
+        
       });
-
+      formData.append('w', resizeDimensions.width.toString());
+      formData.append('h', resizeDimensions.height.toString());
 
       try {
         const response = await axios.post('http://localhost:5001/api/images/upload', formData, {
@@ -216,17 +218,10 @@ export default function Dashboard() {
                 ✖️
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid  gap-4">
+
               <div>
-                <h3 className="text-lg font-semibold mb-2">Antes</h3>
-                <img
-                  src={selectedPhoto}
-                  alt="Antes"
-                  className="w-full h-64 object-contain border"
-                />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Después</h3>
+                <h3 className="text-lg font-semibold mb-2"></h3>
                 <img
                   src={selectedPhoto}
                   alt="Después"
