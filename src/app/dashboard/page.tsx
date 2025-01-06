@@ -7,18 +7,42 @@ import Swal from 'sweetalert2';
 export default function Dashboard() {
   const [photos, setPhotos] = useState<{ id: number; src: string; name: string }[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [resizeDimensions, setResizeDimensions] = useState({ width: 300, height: 300 });
 
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/api/images/images');
+        const response = await axios.get('http://localhost:5001/api/images/images', {
+          headers: {
+            'Authorization': `${localStorage.getItem('token')}`,
+          }
+        });
         const uploadedImages = response.data.map((image: any) => ({
           id: image.id,
           src: `${image.url}`,
           name: image.url.split('/').pop(),
         }));
         setPhotos(uploadedImages);
-      } catch (error) {
+      } catch (error:any) {
+        const response = await axios.get('http://localhost:5001/api/images/images', {
+          headers: {
+            'Authorization': `${localStorage.getItem('token')}`,
+          }
+        });
+      if(error.response && error.response.status === 401){
+            Swal.fire({
+            icon: 'warning',
+            title: 'No autorizado',
+            text: 'Por favor inicie sesión.',
+          }).then(() => {
+            // Eliminar datos de localStorage
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('token');
+          
+            // Redirigir después de que el Swal se cierre
+            window.location.href = '/';
+          });
+        }
         console.error('Error fetching images:', error);
       }
     };
@@ -29,8 +53,10 @@ export default function Dashboard() {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
+      const resizedFiles = await Promise.all(Array.from(files).map(resizeImage));
+
       const formData = new FormData();
-      Array.from(files).forEach((file) => {
+      resizedFiles.forEach((file) => {
         formData.append('image', file);
       });
       formData.append('user_id', localStorage.getItem('user_id') || '');
@@ -39,21 +65,74 @@ export default function Dashboard() {
         const response = await axios.post('http://localhost:5001/api/images/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
+            'Authorization': `${localStorage.getItem('token')}`,
           },
         });
-        
-        const response2 = await axios.get('http://localhost:5001/api/images/images');
+
+        const response2 = await axios.get('http://localhost:5001/api/images/images', {
+          headers: {
+            'Authorization': `${localStorage.getItem('token')}`,
+          }
+        });
         const uploadedImages = response2.data.map((image: any) => ({
           id: image.id,
           src: `${image.url}`,
           name: image.url.split('/').pop(),
         }));
         setPhotos(uploadedImages);
-        Swal.fire('imagen subida con exito')
-      } catch (error) {
+        Swal.fire('Imagen subida con éxito');
+      } catch (error:any) {
         console.error('Error uploading images:', error);
+        if(error.response && error.response.status === 401){
+          Swal.fire({
+            icon: 'warning',
+            title: 'No autorizado',
+            text: 'Por favor inicie sesión.',
+          }).then(() => {
+            // Eliminar datos de localStorage
+            localStorage.removeItem('user_id');
+            localStorage.removeItem('token');
+          
+            // Redirigir después de que el Swal se cierre
+            window.location.href = '/';
+          });
+        }
       }
     }
+  };
+
+  const resizeImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = resizeDimensions.width;
+        canvas.height = resizeDimensions.height;
+
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const resizedFile = new File([blob], file.name, { type: file.type });
+            resolve(resizedFile);
+          }
+        }, file.type);
+      };
+
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleResizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setResizeDimensions({ ...resizeDimensions, [name]: parseInt(value, 10) });
   };
 
   return (
@@ -75,6 +154,29 @@ export default function Dashboard() {
           onChange={handleFileUpload}
           className="hidden"
         />
+
+        {/* Resize Options */}
+        <div className="mt-4">
+          <label className="block mb-2 text-sm font-medium text-gray-700">
+            Resize Options
+          </label>
+          <input
+            type="number"
+            name="width"
+            value={resizeDimensions.width}
+            onChange={handleResizeChange}
+            placeholder="Width"
+            className="mr-2 p-2 border rounded"
+          />
+          <input
+            type="number"
+            name="height"
+            value={resizeDimensions.height}
+            onChange={handleResizeChange}
+            placeholder="Height"
+            className="p-2 border rounded"
+          />
+        </div>
       </div>
 
       {/* Photo Grid */}
