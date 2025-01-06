@@ -18,6 +18,8 @@ export default function Auth() {
       const response = await axios.post('http://localhost:5001/api/auth/login', { username:email, password:password });
       const { token, user_id } = response.data;
 
+      localStorage.setItem('user_id', user_id);
+
       localStorage.setItem('token', token);
       router.push('/dashboard');
     } catch (error: any) {
